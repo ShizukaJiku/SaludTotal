@@ -37,7 +37,7 @@ public class MyDrawerBuilder extends SimpleDrawerBuilder {
 
     @Override
     public SimpleHeaderData getSimpleHeaderData() {
-        AvatarIcon icon = new AvatarIcon(getClass().getResource("/app/drawer/image/profile.png"), 50, 50, 3.5f);
+        AvatarIcon icon = new AvatarIcon(getClass().getResource("/app/drawer/image/profile.jpg"), 50, 50, 3.5f);
         icon.setType(AvatarIcon.Type.MASK_SQUIRCLE);
         icon.setBorder(2, 2);
 
@@ -51,8 +51,8 @@ public class MyDrawerBuilder extends SimpleDrawerBuilder {
 
         return new SimpleHeaderData()
                 .setIcon(icon)
-                .setTitle("Usuario")
-                .setDescription("user@gmail.com");
+                .setTitle("Shizuka Jiku")
+                .setDescription("shizuka.jiku@gmail.com");
     }
 
     private void changeAvatarIconBorderColor(AvatarIcon icon) {

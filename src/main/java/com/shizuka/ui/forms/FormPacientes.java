@@ -4,12 +4,19 @@ import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.shizuka.data.model.Paciente;
 import com.shizuka.data.repository.PacienteRepository;
+import com.shizuka.data.repository.Repository;
+import com.shizuka.ui.modal.InputPacienteForms;
 import com.shizuka.ui.model.ModelPaciente;
 import com.shizuka.ui.system.Form;
 import com.shizuka.ui.utils.SystemForm;
 import com.shizuka.ui.utils.table.CheckBoxTableHeaderRenderer;
 import com.shizuka.ui.utils.table.TableHeaderAlignment;
 import net.miginfocom.swing.MigLayout;
+import raven.modal.ModalDialog;
+import raven.modal.Toast;
+import raven.modal.component.SimpleModalBorder;
+import raven.modal.option.Location;
+import raven.modal.option.Option;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -21,10 +28,11 @@ public class FormPacientes extends Form {
 
     private JTable table;
     private DefaultTableModel tableModel;
-
+    private Repository<Paciente> repository;
 
     @Override
     protected void init() {
+        repository = new PacienteRepository();
         setLayout(new MigLayout("fillx,wrap", "[fill]", "[][fill,grow][]"));
         add(createInfo(
                 "Gestión de Pacientes",
@@ -64,7 +72,7 @@ public class FormPacientes extends Form {
     private Component createCustomTable() {
         JPanel panel = new JPanel(new MigLayout("fillx,wrap,insets 10 0 10 0", "[fill]", "[][][]0[fill,grow]"));
 
-        String[] columnNames = {"SELECT", "#", "Nombres", "Apellidos", "DNI", "Fecha Nacimiento", "Contacto", "N° Citas", "Ultima Cita"};
+        String[] columnNames = {"SELECT", "#", "Nombres", "Apellidos", "DNI", "Fecha Nacimiento", "Contacto", "N° Citas", "Ultima Cita", "id"};
 
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
@@ -88,6 +96,7 @@ public class FormPacientes extends Form {
         table.getColumnModel().getColumn(0).setMaxWidth(50);
         table.getColumnModel().getColumn(1).setMaxWidth(50);
         table.getColumnModel().getColumn(7).setMaxWidth(100);
+        table.getColumnModel().removeColumn(table.getColumnModel().getColumn(9));
 
         table.getTableHeader().setReorderingAllowed(false);
         table.getColumnModel().getColumn(0).setHeaderRenderer(new CheckBoxTableHeaderRenderer(table, 0));
@@ -141,15 +150,21 @@ public class FormPacientes extends Form {
         panel.add(separator, "height 2");
         panel.add(scrollPane);
 
-        PacienteRepository pacienteRepository = new PacienteRepository();
-
-        // sample data
-        for (Paciente paciente : pacienteRepository.getAll()) {
-            tableModel.addRow(ModelPaciente.toTableRowCustom(paciente, table.getRowCount() + 1));
-        }
+        updateData();
 
         return panel;
     }
+
+    private void updateData() {
+        tableModel.setRowCount(0);
+
+        for (var paciente : repository.getAll()) {
+            tableModel.addRow(ModelPaciente.toTableRowCustom(paciente, tableModel.getRowCount() + 1));
+        }
+
+        tableModel.fireTableDataChanged();
+    }
+
 
     private Component createHeaderAction() {
         JPanel panel = new JPanel(new MigLayout("insets 5 20 5 20", "[fill,230]push[][]"));
@@ -177,30 +192,94 @@ public class FormPacientes extends Form {
         return panel;
     }
 
-
     private void onCreate(ActionEvent e) {
-        // Lógica para crear un paciente (puedes abrir un modal o un formulario adicional)
-        JOptionPane.showMessageDialog(this, "Funcionalidad de Crear aún no implementada.", "Crear Paciente", JOptionPane.INFORMATION_MESSAGE);
+        Option option = ModalDialog.createOption();
+        option.getLayoutOption().setSize(-1, 1f)
+                .setLocation(Location.TRAILING, Location.TOP)
+                .setAnimateDistance(0.7f, 0);
+
+        SimpleModalBorder.Option[] options = new SimpleModalBorder.Option[]{new SimpleModalBorder.Option("Registrar", 0), new SimpleModalBorder.Option("Cancelar", 1)};
+
+        InputPacienteForms inputForms = new InputPacienteForms();
+
+        ModalDialog.showModal(this, new SimpleModalBorder(
+                inputForms, "Registrar Paciente", options,
+                (controller, action) -> {
+                    if(action == 0) {
+                        try {
+                            repository.insert(inputForms.getPaciente());
+                            updateData();
+                            Toast.show(this, Toast.Type.SUCCESS, "Se ha registrado correctamente");
+
+                        } catch (IllegalArgumentException ex) {
+                            Toast.show(this, Toast.Type.ERROR, "No se ha podido registrar el paciente");
+                        }
+                    }
+                }), option);
     }
 
     private void onEdit(ActionEvent e) {
         // Lógica para editar un paciente seleccionado
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow >= 0) {
-            JOptionPane.showMessageDialog(this, "Funcionalidad de Editar aún no implementada.", "Editar Paciente", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this, "Por favor, selecciona un paciente para editar.", "Editar Paciente", JOptionPane.WARNING_MESSAGE);
+        try{
+            int selectedRow = table.getSelectedRow();
+            int id = (int) tableModel.getValueAt(selectedRow, 9);
+
+            Paciente paciente = repository.findById(id).get();
+
+            Option option = ModalDialog.createOption();
+            option.getLayoutOption().setSize(-1, 1f)
+                    .setLocation(Location.TRAILING, Location.TOP)
+                    .setAnimateDistance(0.7f, 0);
+
+            SimpleModalBorder.Option[] options = new SimpleModalBorder.Option[]{new SimpleModalBorder.Option("Actualizar", 0), new SimpleModalBorder.Option("Cancelar", 1)};
+
+            InputPacienteForms inputForms = new InputPacienteForms(paciente);
+
+            ModalDialog.showModal(this, new SimpleModalBorder(
+                    inputForms, "Actualizar Paciente", options,
+                    (controller, action) -> {
+                        if(action == 0) {
+                            try {
+                                repository.update(id, inputForms.getPaciente());
+                                updateData();
+                                Toast.show(this, Toast.Type.SUCCESS, "Se ha actualizado correctamente");
+
+                            } catch (IllegalArgumentException ex) {
+                                Toast.show(this, Toast.Type.ERROR, "No se ha actualizar el paciente");
+                            }
+                        }
+                    }), option);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Toast.show(this, Toast.Type.ERROR, "No se ha podido actualizar el paciente");
         }
     }
 
     private void onDelete(ActionEvent e) {
         // Lógica para eliminar un paciente seleccionado
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow >= 0) {
-            tableModel.removeRow(selectedRow);
-            JOptionPane.showMessageDialog(this, "Paciente eliminado con éxito.", "Eliminar Paciente", JOptionPane.INFORMATION_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this, "Por favor, selecciona un paciente para eliminar.", "Eliminar Paciente", JOptionPane.WARNING_MESSAGE);
+        try{
+            int selectedRow = table.getSelectedRow();
+            int id = (int) tableModel.getValueAt(selectedRow, 9);
+
+            JTextArea txt = new JTextArea();
+            txt.setEditable(false);
+            txt.putClientProperty(FlatClientProperties.STYLE, "" +
+                    "border:5,35,5,35");
+            txt.setText("¡Esta seguro de eliminar el paciente?");
+
+            SimpleModalBorder.Option[] options = new SimpleModalBorder.Option[]{new SimpleModalBorder.Option("Eliminar", 0), new SimpleModalBorder.Option("Cancelar", 1)};
+
+            ModalDialog.showModal(this, new SimpleModalBorder(txt, "Confirmar", options,
+                    (controller, action) -> {
+                        if(action == 0) {
+                            repository.delete(id);
+                            updateData();
+                            Toast.show(this, Toast.Type.SUCCESS, "Paciente eliminado exitosamente");
+                        }
+                    }));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            Toast.show(this, Toast.Type.ERROR, "No se ha podido eliminar el paciente");
         }
     }
 }

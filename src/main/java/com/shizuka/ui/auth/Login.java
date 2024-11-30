@@ -4,6 +4,11 @@ import com.formdev.flatlaf.FlatClientProperties;
 import com.shizuka.ui.system.Form;
 import com.shizuka.ui.system.FormManager;
 import net.miginfocom.swing.MigLayout;
+import raven.modal.Toast;
+import raven.modal.option.Location;
+import raven.modal.toast.option.ToastLocation;
+import raven.modal.toast.option.ToastOption;
+import raven.modal.toast.option.ToastStyle;
 
 import javax.swing.*;
 
@@ -54,18 +59,50 @@ public class Login extends Form {
         // event
         cmdLogin.addActionListener((e) -> {
             String userName = txtUsername.getText().trim();
+            String password = new String(txtPassword.getPassword());
 
-            if(login(userName, txtPassword.getPassword())) {
+            if(userName.isEmpty() || password.isEmpty()) {
+                showToast("Por favor ingrese sus credenciales", Toast.Type.WARNING, getSelectedOption());
+                return;
+            }
+
+            if(login(userName, password)) {
+                showToast("Bienvenido " + userName, Toast.Type.SUCCESS, getSelectedOption());
                 FormManager.login();
+            } else {
+                showToast("Error, usuario o contraseña incorrectos",Toast.Type.ERROR, getSelectedOption());
             }
         });
     }
 
-    private Boolean login(String username, char[] password) {
-        String passwordString = new String(password);
-        return "user".equals(username) && "user".equals(passwordString);
+    private Boolean login(String username, String password) {
+        return "user".equals(username) && "user".equals(password);
     }
 
+    private void showToast(String text, Toast.Type type, ToastOption option) {
+        Toast.closeAll();
+        Toast.show(this, type, text, option);
+    }
+
+    private ToastOption getSelectedOption() {
+        ToastOption option = Toast.createOption();
+        Location h = Location.CENTER;
+        Location v = Location.TOP;
+        ToastStyle.BackgroundType backgroundType = ToastStyle.BackgroundType.GRADIENT;
+        ToastStyle.BorderType borderType = ToastStyle.BorderType.LEADING_LINE;
+        option.setAnimationEnabled(true)
+                .setPauseDelayOnHover(true)
+                .setAutoClose(true)
+                .setCloseOnClick(true);
+        option.setLayoutOption(ToastLocation.from(h, v).getLayout());
+        option.getStyle().setBackgroundType(backgroundType)
+                .setBorderType(borderType)
+                .setShowLabel(false)
+                .setIconSeparateLine(true)
+                .setShowCloseButton(true)
+                .setPromiseLabel("Saving...");
+        return option;
+    }
 
     private JTextField txtUsername;
     private JPasswordField txtPassword;

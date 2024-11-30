@@ -18,7 +18,8 @@ public class ModelPaciente {
                 p.getFechaNacimiento().toString(),
                 p.getContacto(),
                 p.getCitas().size(),
-                lastCita
+                lastCita,
+                p.getId()
         };
     }
 
