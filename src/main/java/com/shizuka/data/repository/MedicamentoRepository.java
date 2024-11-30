@@ -1,5 +1,8 @@
 package com.shizuka.data.repository;
 
+import com.shizuka.data.exception.HistoriaMedicaNotFoundException;
+import com.shizuka.data.exception.MedicamentoNotFoundException;
+import com.shizuka.data.model.HistoriaMedica;
 import com.shizuka.data.model.Medicamento;
 import com.shizuka.data.sample.SampleData;
 
@@ -23,6 +26,11 @@ public class MedicamentoRepository implements Repository<Medicamento> {
                 .findFirst();
     }
 
+    public Medicamento findByIdOrThrow(int id) {
+        return findById(id)
+                .orElseThrow(() -> new MedicamentoNotFoundException(id));
+    }
+
     @Override
     public List<Medicamento> getAll() {
         return medicamentos;
@@ -42,6 +50,6 @@ public class MedicamentoRepository implements Repository<Medicamento> {
 
     @Override
     public boolean delete(int id) {
-        return medicamentos.removeIf(medicamento -> medicamento.getId() == id);
+        return medicamentos.remove(findByIdOrThrow(id));
     }
 }

@@ -1,5 +1,6 @@
 package com.shizuka.data.repository;
 
+import com.shizuka.data.exception.CitaNotFoundException;
 import com.shizuka.data.model.Cita;
 import com.shizuka.data.sample.SampleData;
 
@@ -23,6 +24,17 @@ public class CitaRepository implements Repository<Cita> {
                 .findFirst();
     }
 
+    public Cita findByIdOrThrow(int id) {
+        return findById(id)
+                .orElseThrow(() -> new CitaNotFoundException(id));
+    }
+
+    @Override
+    public boolean delete(int id) {
+        Cita cita = findByIdOrThrow(id);
+        return citas.remove(cita);
+    }
+
     @Override
     public List<Cita> getAll() {
         return citas;
@@ -39,10 +51,5 @@ public class CitaRepository implements Repository<Cita> {
             return true;
         }
         return false;
-    }
-
-    @Override
-    public boolean delete(int id) {
-        return citas.removeIf(cita -> cita.getId() == id);
     }
 }

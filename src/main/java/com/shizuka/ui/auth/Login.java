@@ -6,7 +6,6 @@ import com.shizuka.ui.system.FormManager;
 import net.miginfocom.swing.MigLayout;
 
 import javax.swing.*;
-import java.util.Arrays;
 
 public class Login extends Form {
 

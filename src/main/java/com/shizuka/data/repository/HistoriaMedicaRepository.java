@@ -1,5 +1,6 @@
 package com.shizuka.data.repository;
 
+import com.shizuka.data.exception.HistoriaMedicaNotFoundException;
 import com.shizuka.data.model.HistoriaMedica;
 import com.shizuka.data.sample.SampleData;
 
@@ -23,6 +24,12 @@ public class HistoriaMedicaRepository implements Repository<HistoriaMedica> {
                 .findFirst();
     }
 
+    public HistoriaMedica findByIdOrThrow(int id) {
+        return findById(id)
+                .orElseThrow(() -> new HistoriaMedicaNotFoundException(id));
+    }
+
+
     @Override
     public List<HistoriaMedica> getAll() {
         return historiasMedicas;
@@ -43,6 +50,6 @@ public class HistoriaMedicaRepository implements Repository<HistoriaMedica> {
 
     @Override
     public boolean delete(int id) {
-        return historiasMedicas.removeIf(historia -> historia.getId() == id);
+        return historiasMedicas.remove(findByIdOrThrow(id));
     }
 }
